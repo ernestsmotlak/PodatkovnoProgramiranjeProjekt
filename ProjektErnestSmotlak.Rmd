@@ -1,0 +1,349 @@
+---
+title: "Smrti policistov in policistk v Ameriki"
+author: "Ernest Smotlak"
+date: '2022-06-18'
+output: 
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T, warning = F, message = F, error = T)
+library(ggplot2)
+library(readxl)
+library(tidyverse)
+```
+
+# Uvod #
+Ta nabor podatkov vsebuje informacije o smrtnih žrtvah policistov in policistk v Združenih državah Amerike. Podatki vsebujejo ime policista/policistke, vzrok smrti, oddelek ter čin policista oziroma policistke. Nabor podatkov vsebuje informacije vse od leta 1791 pa do 2022. 
+Poleg tega so v naboru podatkov tudi informacije o smrtih policijskih psov, prav tako so poleg navedeni tudi vzroki za njihovo smrt.
+```{r}
+pdeaths = read_csv("police_deaths_in_america.csv")
+
+```
+# Predstavitev podatkov #
+V našem naboru podatkov imamo 10 stolpcev, kateri nam podajajo informacije o policijskih smrtnih žrtvah v ZDA.
+Po vrsti si sledijo:
+
+
+
+## Čin (Rank) ##
+  
+  Prikaz činov. 
+```{r}
+pdeaths %>% distinct("Čin" = Rank) %>% head(15)
+
+```
+
+  
+## Ime policista oziroma policistke (Name)##
+  
+  Primer prikaza imen.
+```{r}
+pdeaths %>% select("Ime" = Name) %>% head(15)
+
+```
+  
+  
+  
+## Vzrok smrti policista/policistke (Cause of death)##
+  
+Prikaz različnih vzrokov smrti za policiste/policistke.
+```{r}
+pdeaths %>% distinct("Vzrok smrti" = Cause_of_Death) %>% head(15)
+```
+
+
+## Datum smrti (Date)##
+  
+Prikaz datumov smrti.
+  
+```{r}
+pdeaths %>% distinct("Datum" = Date) %>% head(15)
+```
+
+
+## Leto smrti (year)##
+  
+Prikaz let smrti.
+```{r}
+pdeaths %>% distinct("Leto" = Year) %>% head(15)
+```
+
+  
+## Mesec smrti (Month)##
+  
+Prikaz mesecev smrti.
+  
+```{r}
+pdeaths %>% distinct("Mesec" = Cause_of_Death) %>% head(15)
+```
+  
+  
+  
+## Dan smrti (Day)##
+  
+Prikaz dni smrti.
+  
+```{r}
+pdeaths %>% distinct("Dan" = Day) %>% head(15)
+```
+
+
+## Oddelek (Department)##
+  
+Prikaz različnih oddelkov.
+```{r}
+pdeaths %>% distinct("Oddelek" = Department) %>% head(15)
+```
+
+
+## Zvezna država (State)##
+  
+Prikaz po zveznih državah.
+```{r}
+pdeaths %>% distinct("Zvezna država" = State) %>% head(15)
+```
+
+
+## K9_Unit##
+Zadnji stolpec, imenovan K9_Unit, vsebuje le vrednosti 0 ali pa 1.
+  
+  
+# Analiza podatkov #
+
+## Čin policista/policistke ##
+Pri analizi podatkov činov policijskega osebja iz ZDA ni bilo mogoče najti hiearhije, poleg tega je v našem naboru podatkov različnih činov 615.
+ 
+```{r}
+pdeaths %>% distinct(Rank) %>% count()
+```
+Kot lahko vidimo iz analize podatkov, je največ umrlega policijskega osebja bilo čina "Patrolman", nato sledi "Police Officer", ter nato še "Deputy Sherrif".
+```{r}
+pdeaths %>% group_by(Rank) %>% count(sort = T) %>% head(10)
+```
+
+Graf, ki prikazuje čine umrlega policijskega osebja od največjega števila umrlih proti najmanjšemu.
+
+```{r}
+ggplot(pdeaths %>% select(Rank) %>% group_by(Rank) %>% count(sort = T)  %>% head(10)) +
+  aes(n, Rank) +
+  geom_col() +  ggtitle("Število umrlih po činu") +
+  geom_bar(stat="identity", fill="#FF9999", colour="black") + 
+  labs(y= "Čin", x = "Število umrlih")
+```
+
+
+
+
+Če pa pogledamo čine umrlih, kateri se najmanj krat pojavijo, vidimo, da je teh 252.
+
+```{r}
+pdeaths %>% group_by(Rank) %>%  summarise(n = n()) %>% filter(n == min(n)) %>% count()
+```
+
+Če samo pogledamo nekatere izmed teh činov, vidimo, da ima veliko od njih starejša oziroma stara imena, katera danes niso več v uporabi, na primer Wagonman.
+
+```{r}
+pdeaths %>% group_by(Rank) %>%  summarise(n = n()) %>% filter(n == min(n)) %>% map_df(rev)
+```
+
+
+## Ime policista/policistke##
+Glede imen policistiv/policistk, podobne analize podatkov, kot je bila narejena prej pri "Činu", ni smiselna, saj grupiranje po imenu načeloma ni smiselno, saj se ne gre za isto osebo. 
+
+Ker pa imamo v naboru podatkov tudi imena psov (K9), ki so preminuli med policijskim delom, lahko pogledamo, če so imeli psi enaka imena. 
+
+Nato odstranimo vsa imena, ki se pojavijo samo enkrat.
+```{r}
+pdeaths %>% group_by(Name) %>% count(sort = T) %>% filter(n > 1)
+```
+Kot lahko vidimo, so nekater umrli policisti/policistke in psi imeli enaka imena. Seveda je velika večina podvojenih imen, od psov. 
+
+
+
+## Vzrok smrti##
+ Pri analizi vzrokov smrti policijskega osebja, najprej pogledamo katerih vzrokov za smrt je bilo največ.
+```{r}
+pdeaths %>% group_by(Cause_of_Death) %>% count(sort = T) %>% head(10)
+```
+Najpogostejši vzrok za smrt policijskega osebja v ZDA, je smrt zaradi strelnega orožja, kar ne preseneča. Drugi najpogostješi vzrok smrti je nesreča z avtomobilom, ostale podatke lahko razberemo iz rezultatov.
+Zanimivo je, da je glede na podatke za 231 let (od leta 1791 pa do 2022), eden izmed najpogostejših razlogov za smrt COVID19. Zanimivo je predvsem to, da je koronavirus prisoten od leta 2022 in da je v dveh letih že eden izmed pogostejših razlogov za smrt policijskega osebja v ZDA. Pričakovano pa je, da pa bo COVID19 v naslednjih letih iz te lestvice izginil.
+
+
+```{r}
+ggplot(pdeaths %>% select(Cause_of_Death) %>% group_by(Cause_of_Death) %>% count(sort = T)  %>% head(10)) +
+  aes(n, Cause_of_Death) +
+  geom_col() + ggtitle("Število umrlih glede na vzrok ") + 
+  geom_bar(stat="identity", fill="#FF9999", colour="black") +
+  labs(y= "Vzrok smrti", x = "Število umrlih")
+```
+
+# # 
+Spodnji rezultati nam prikazujej najmanj pogoste vzroke za smrt. Najmanj pogost razlog je zastoj dihanja.
+Nato sledi neznan razlog, nato pa zastrupitev.
+```{r}
+pdeaths %>% group_by(Cause_of_Death) %>% count(sort = T) %>% map_df(rev)
+```
+
+```{r}
+ggplot(pdeaths %>% group_by(Cause_of_Death) %>% count(sort = T) %>% map_df(rev) %>% head(10)) +
+  aes(n, Cause_of_Death) +
+  geom_col() + ggtitle("Število umrlih glede na vzrok ") + 
+  geom_bar(stat="identity", fill="pink", colour="red") +
+  labs(y= "Vzrok smrti", x = "Število umrlih")
+```
+
+
+## Datum##
+
+Glede datuma nas predvsem zanima katera obdobja je umrlo največ policijskega osebja in katera obdobja jih je umrlo najmanj. 
+
+Najprej pogledamo za koliko dni, mesecev in let imamo sploh podatke o smrtih med policijskim osebjem.
+Ta številka nam pove, da je od 1791 pa do 2022, prišlo do smrtne žrtve med policijskim osebjem v 19218 dnevih.
+```{r}
+pdeaths %>% distinct(Date)  %>% count()
+```
+Nato pogledamo na kateri dan je prišlo do največ smrtnih žrtev.
+
+```{r}
+pdeaths %>% group_by(Date) %>% count(sort = T) %>% head(10)
+
+ggplot(pdeaths %>% group_by(Date) %>% count(sort = T) %>% head(10)) +
+  aes(n, Date) +
+  geom_col() + ggtitle("Največ umrlih na dan ") + 
+  geom_bar(stat="identity", fill="red", colour="black") +
+  labs(y= "Datum", x = "Število umrlih")
+
+```
+Kot je razvidno iz rezultatov, je največ policijskega osebja umrlo v torek, 11.septembra 2001. Na ta dan je prišlo do vsem znane katastrofe v New Yorku. 
+27. aprila 1879 pa se je porušil balkon v Virginia State Capitolu, kjer je umrlo 11 policistov.
+
+
+Če analiziramo podatke za število smrtnih žrtev po letih, vidimo, da je bilo največ smrtnih žrtev leta 2021. Takoj za letom 2021, je po številu smrtnih žrtev med policijskim osebjem, leto 2020. Pred tem, pa sta leti 1930 in 1927.
+```{r}
+pdeaths %>% group_by(Year) %>% count(sort = T) %>% head(5)
+
+
+```
+
+Če pogledamo leta, na katera je umrlo najmanj policijskega osebja, vidimo, da se je to zgodilo 17krat. Lahko sklepamo, da so ti podatki napačni, najverjetneje pa zato, ker so takrat slabše beležili podatke.
+
+```{r}
+pdeaths %>% group_by(Year) %>% select(Year) %>% summarise(n = n()) %>% filter(n==1) %>% count()
+```
+
+## Leto##
+
+Prikaz smrti po letih.
+```{r}
+ggplot(leta, aes(x=Year, y=n, group=1)) +
+  geom_line(color="red", size = 1)+
+  geom_point() + 
+  ggtitle("Smrti po letih") +
+  labs(x="Leta",y="Število smrti")
+```
+
+
+```{r}
+
+```
+
+## Dan##
+
+Če pogledamo dneve in število smrtnih žrtev na dan v tednu, vidimo sledeče: 
+```{r}
+pdeaths %>% group_by(Day) %>% summarise(n = n()) %>% arrange(desc(n))
+```
+ * največ policijskega osebja je umrlo v Soboto
+ * najmanj policijskega osebja je umrlo v Sredo
+ 
+
+## Oddelki in zvezne države ##
+Ko analiziramo podatke za smrti policijskega osebja, natančneje, ko se osredotočamo na Oddelke, kjer je do smrtnih žrtev prišlo, vidimo, da je Oddelek z največ smrtmi "New York City Police Department". 
+Za njim sledi "Chicago Police Department", nato pa "Puerto Rico Department".
+```{r}
+pdeaths %>% group_by(Department) %>% count(sort = T)  %>% head(7)
+```
+Nato pa pogledamo v kateri zvezni državi je umrlo največ policistov in sklepamo, da bi to morali po vrsti  biti najprej New York, Chicago in nato Puero Rico. 
+
+```{r}
+pdeaths %>% group_by(State) %>% count(sort = T)  %>% head(7)
+```
+Vidimo, da to ne drži, saj je prva izmed zveznih držav Texas. 
+Razlog zakaj ni največ smrtnih žrtev v New Yorku, čeprav je bilo tako pričakovati, je enostaven. Policijski oddelki v New Yorku, Chicagu in Puerto Ricu pokrivajo zelo velika območja, poleg tega pa so ta območja tudi zelo gosto poseljena. Zaradi tega lahko sklepamo na večji odstotek kriminala (zaradi visoke gostote prebivalstva) in posledični tudi na več smrti med policijskim osebjem. 
+
+
+
+Če nato pogledamo oddelke, kjer je prišlo do 1 smrtne žrtve (nemoremo pogledati oddelkov, ki imajo najmanj smrtnih žrtev, se pravi nobene, ker teh ni v naboru podatkov, tako da najmanj smrtnih žrtev je v našem primeru 1 smrtna žrtev), vidimo, da je teh zelo veliko, natančneje 4145.
+```{r}
+pdeaths %>% group_by(Department) %>% select(Department) %>% summarise(n = n()) %>% filter(n==1) %>% count()
+```
+
+Če nato te oddelke z 1 smrtno žrtvijo primerjamo z zveznimi državami z najmanj žrtvami, vidimo sledeče:
+```{r}
+pdeaths %>% group_by(State) %>% count(sort = T) %>% map_df(rev) #drzava min
+```
+Najmanjše število policijskih smrtnih žrtev v zvezni državi je 3. To število smrtnih žrtev imajo 3 zvezne države in sicer: Panama, Northern Mariana Islands in American Samoa.
+```{r}
+
+pdeaths %>% group_by(State) %>% select(State) %>% summarise(n = n()) %>% filter(n == min(n)) -> minDrzava
+minDrzava[1,2]
+
+pdeaths %>% group_by(State) %>% select(State) %>% summarise(n = n()) %>% filter(n == min(n))
+
+pdeaths %>% group_by(State) %>% select(State) %>% summarise(n = n()) %>% filter(n == min(n)) %>% count()
+```
+
+
+
+
+
+## Pasje enote ##
+V našem naboru podatkov imajo pasje enote (K9_Unit) v zadnjem stolpcu edine vrednost 1. Poleg tega imajo vse preminule pasje enote tudi svoj Čin (K9).
+
+Najprej pogledamo koliko različnih vzrokov za smrt je v našem naboru podatkov za pse.
+```{r}
+pdeaths %>% filter(K9_Unit == 1) -> dogs
+dogs %>% group_by(Cause_of_Death) %>% summarise(n = n()) %>% arrange(n) %>% map_df(rev) %>% count()
+
+```
+
+
+Nato pogledamo kateri so najpogostejši razlogi za smrt pasjih enot, vidimo, da je najpogostejši razlog smrt zaradi strelnega orožja. 
+
+```{r}
+dogs %>% group_by(Cause_of_Death) %>% summarise(n = n()) %>% arrange(n) %>% map_df(rev) %>% head(6)
+```
+
+
+
+```{r}
+ggplot(dogs %>% group_by(Cause_of_Death) %>% summarise(n = n()) %>% arrange(n) %>% map_df(rev)) + 
+  aes(n, Cause_of_Death ) + 
+  geom_col() + ggtitle("Vzroki smrti pasjih enot") + 
+  geom_bar(stat = "identity", fill="lightblue", colour="black") + 
+  labs(y="Vzroki za smrt", x="Število mrtvih")
+```
+
+
+Tu ni presenetljivo, da je največ psov umrlo zaradi ustrelitve.
+Zelo je zanimiv podatek, da je drugi najpogostejši razlog za smrt policijskega psa (ki ni naravna smrt), vročinska kap. To je zanimivo, ker vročinska kap ni smrt, povzročena s strani nekoga drugega, usaj ne namerno, kot je na primer smrt zaradi strelnega orožja.
+
+# Zaključek #
+
+Zaključimo lahko, da je za največ smrtnih žrtev med policijskim osebjem v ZDA krivo strelno orožje. To dejstvo ni presenetljivo, saj je v sami ustavi Združenih držav Amerike zapisano, da ima vsak polnoleten američan pravico do orožja. 
+Prav tako ni presenetljivo, da je strelno orožje krivo tudi za daleč največ smrti med pasjimi enotami v policiji v ZDA.
+Zanimivo pa je, da je drugi najpogostejši razlog za smrt psa v policiji, kriv vročinski udar.
+
+
+
+# Reference #
+
+<a href="https://en.wikipedia.org/wiki/Exploratory_data_analysis">https://en.wikipedia.org/wiki/Exploratory_data_analysis</a>
+
+<a href="https://www.kaggle.com/datasets/mayureshkoli/police-deaths-in-usa-from-1791-to-2022">https://www.kaggle.com/datasets/mayureshkoli/police-deaths-in-usa-from-1791-to-2022</a>
+
+<a href="https://public.tableau.com/app/profile/mayuresh.koli/viz/USALawEnforcementLineofDutyDeaths/main_dashboard">https://public.tableau.com/app/profile/mayuresh.koli/viz/USALawEnforcementLineofDutyDeaths/main_dashboard</a>
